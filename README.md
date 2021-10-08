@@ -1,7 +1,5 @@
 ###
 
-Here are some ideas to get you started:
-
 - 🔭 I’m currently working on No Applications
 - 🌱 I’m currently learning arch
 - 💬 Contact with me to collaborate
