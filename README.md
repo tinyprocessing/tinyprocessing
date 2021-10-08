@@ -2,10 +2,9 @@
 
 Here are some ideas to get you started:
 
-- 🔭 I’m currently working on Yelm Resource
+- 🔭 I’m currently working on No Applications
 - 🌱 I’m currently learning arch
 - 💬 Contact with me to collaborate
-- 📫 How to reach me: safir_md@yelm.io
+- 📫 How to reach me: safir@thenoco.co
 - ⚡ Fun fact: A B C D _
 
-![](https://github-readme-stats.vercel.app/api?username=michaelsafir&show_icons=true&theme=default&count_private=true)
