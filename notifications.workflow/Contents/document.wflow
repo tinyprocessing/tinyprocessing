@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AMApplicationBuild</key>
+	<string>523</string>
+	<key>AMApplicationVersion</key>
+	<string>2.10</string>
+	<key>AMDocumentVersion</key>
+	<string>2</string>
+	<key>actions</key>
+	<array>
+		<dict>
+			<key>action</key>
+			<dict>
+				<key>AMAccepts</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Optional</key>
+					<true/>
+					<key>Types</key>
+					<array>
+						<string>com.apple.applescript.object</string>
+					</array>
+				</dict>
+				<key>AMActionVersion</key>
+				<string>1.0</string>
+				<key>AMApplication</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>AMParameterProperties</key>
+				<dict>
+					<key>source</key>
+					<dict/>
+				</dict>
+				<key>AMProvides</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Types</key>
+					<array>
+						<string>com.apple.applescript.object</string>
+					</array>
+				</dict>
+				<key>ActionBundlePath</key>
+				<string>/System/Library/Automator/Run JavaScript.action</string>
+				<key>ActionName</key>
+				<string>Run JavaScript</string>
+				<key>ActionParameters</key>
+				<dict>
+					<key>source</key>
+					<string>function run(input, parameters) {
+
+  const appNames = [];
+  const skipAppNames = [];
+  const verbose = true;
+
+  const scriptName = "close_notifications_applescript";
+
+  const CLEAR_ALL_ACTION = "Clear All";
+  const CLEAR_ALL_ACTION_TOP = "Clear";
+  const CLOSE_ACTION = "Close";
+
+  const notNull = (val) =&gt; {
+    return val !== null &amp;&amp; val !== undefined;
+  };
+
+  const isNull = (val) =&gt; {
+    return !notNull(val);
+  };
+
+  const notNullOrEmpty = (val) =&gt; {
+    return notNull(val) &amp;&amp; val.length &gt; 0;
+  };
+
+  const isNullOrEmpty = (val) =&gt; {
+    return !notNullOrEmpty(val);
+  };
+
+  const isError = (maybeErr) =&gt; {
+    return notNull(maybeErr) &amp;&amp; (maybeErr instanceof Error || maybeErr.message);
+  };
+
+  const systemVersion = () =&gt; {
+    return Application("Finder").version().split(".").map(val =&gt; parseInt(val));
+  };
+
+  const systemVersionGreaterThanOrEqualTo = (vers) =&gt; {
+    return systemVersion()[0] &gt;= vers;
+  };
+
+  const isBigSurOrGreater = () =&gt; {
+    return systemVersionGreaterThanOrEqualTo(11);
+  };
+
+  const V11_OR_GREATER = isBigSurOrGreater();
+  const V12 = systemVersion()[0] === 12;
+  const APP_NAME_MATCHER_ROLE = V11_OR_GREATER ? "AXStaticText" : "AXImage";
+  const hasAppNames = notNullOrEmpty(appNames);
+  const hasSkipAppNames = notNullOrEmpty(skipAppNames);
+  const hasAppNameFilters = hasAppNames || hasSkipAppNames;
+  const appNameForLog = hasAppNames ? ` [${appNames.join(",")}]` : "";
+
+  const logs = [];
+  const log = (message, ...optionalParams) =&gt; {
+    let message_with_prefix = `${new Date().toISOString().replace("Z", "").replace("T", " ")} [${scriptName}]${appNameForLog} ${message}`;
+    console.log(message_with_prefix, optionalParams);
+    logs.push(message_with_prefix);
+  };
+
+  const logError = (message, ...optionalParams) =&gt; {
+    if (isError(message)) {
+      let err = message;
+      message = `${err}${err.stack ? (" " + err.stack) : ""}`;
+    }
+    log(`ERROR ${message}`, optionalParams);
+  };
+
+  const logErrorVerbose = (message, ...optionalParams) =&gt; {
+    if (verbose) {
+      logError(message, optionalParams);
+    }
+  };
+
+  const logVerbose = (message) =&gt; {
+    if (verbose) {
+      log(message);
+    }
+  };
+
+  const getLogLines = () =&gt; {
+    return logs.join("\n");
+  };
+
+  const getSystemEvents = () =&gt; {
+    let systemEvents = Application("System Events");
+    systemEvents.includeStandardAdditions = true;
+    return systemEvents;
+  };
+
+  const getNotificationCenter = () =&gt; {
+    try {
+      return getSystemEvents().processes.byName("NotificationCenter");
+    } catch (err) {
+      logError("Could not get NotificationCenter");
+      throw err;
+    }
+  };
+
+  const getNotificationCenterGroups = (retryOnError = false) =&gt; {
+    try {
+      let notificationCenter = getNotificationCenter();
+      if (notificationCenter.windows.length &lt;= 0) {
+        return [];
+      }
+      if (!V11_OR_GREATER) {
+        return notificationCenter.windows();
+      }
+      if (V12) {
+        return notificationCenter.windows[0].uiElements[0].uiElements[0].uiElements();
+      }
+      return notificationCenter.windows[0].uiElements[0].uiElements[0].uiElements[0].uiElements();
+    } catch (err) {
+      logError("Could not get NotificationCenter groups");
+      if (retryOnError) {
+        logError(err);
+        log("Retrying getNotificationCenterGroups...");
+        return getNotificationCenterGroups(false);
+      } else {
+        throw err;
+      }
+    }
+  };
+
+  const isClearButton = (description, name) =&gt; {
+    return description === "button" &amp;&amp; name === CLEAR_ALL_ACTION_TOP;
+  };
+
+  const matchesAnyAppNames = (value, checkValues) =&gt; {
+    if (isNullOrEmpty(checkValues)) {
+      return false;
+    }
+    let lowerAppName = value.toLowerCase();
+    for (let checkValue of checkValues) {
+      if (lowerAppName === checkValue.toLowerCase()) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const matchesAppName = (role, value) =&gt; {
+    if (role !== APP_NAME_MATCHER_ROLE) {
+      return false;
+    }
+    if (hasAppNames) {
+      return matchesAnyAppNames(value, appNames);
+    }
+    return !matchesAnyAppNames(value, skipAppNames);
+  };
+
+  const notificationGroupMatches = (group) =&gt; {
+    try {
+      let description = group.description();
+      if (V11_OR_GREATER &amp;&amp; isClearButton(description, group.name())) {
+        return true;
+      }
+      if (V11_OR_GREATER &amp;&amp; description !== "group") {
+        return false;
+      }
+      if (!V11_OR_GREATER) {
+        let matchedAppName = !hasAppNameFilters;
+        if (!matchedAppName) {
+          for (let elem of group.uiElements()) {
+            if (matchesAppName(elem.role(), elem.description())) {
+              matchedAppName = true;
+              break;
+            }
+          }
+        }
+        if (matchedAppName) {
+          return notNull(findCloseActionV10(group, -1));
+        }
+        return false;
+      }
+      if (!hasAppNameFilters) {
+        return true;
+      }
+      let checkElem = group.uiElements[0];
+      if (checkElem.value().toLowerCase() === "time sensitive") {
+        checkElem = group.uiElements[1];
+      }
+      return matchesAppName(checkElem.role(), checkElem.value());
+    } catch (err) {
+      logErrorVerbose(`Caught error while checking window, window is probably closed: ${err}`);
+      logErrorVerbose(err);
+    }
+    return false;
+  };
+
+  const findCloseActionV10 = (group, closedCount) =&gt; {
+    try {
+      for (let elem of group.uiElements()) {
+        if (elem.role() === "AXButton" &amp;&amp; elem.title() === CLOSE_ACTION) {
+          return elem.actions["AXPress"];
+        }
+      }
+    } catch (err) {
+      logErrorVerbose(`(group_${closedCount}) Caught error while searching for close action, window is probably closed: ${err}`);
+      logErrorVerbose(err);
+      return null;
+    }
+    log("No close action found for notification");
+    return null;
+  };
+
+  const findCloseAction = (group, closedCount) =&gt; {
+    try {
+      if (!V11_OR_GREATER) {
+        return findCloseActionV10(group, closedCount);
+      }
+      let checkForPress = isClearButton(group.description(), group.name());
+      let clearAllAction;
+      let closeAction;
+      for (let action of group.actions()) {
+        let description = action.description();
+        if (description === CLEAR_ALL_ACTION) {
+          clearAllAction = action;
+          break;
+        } else if (description === CLOSE_ACTION) {
+          closeAction = action;
+        } else if (checkForPress &amp;&amp; description === "press") {
+          clearAllAction = action;
+          break;
+        }
+      }
+      if (notNull(clearAllAction)) {
+        return clearAllAction;
+      } else if (notNull(closeAction)) {
+        return closeAction;
+      }
+    } catch (err) {
+      logErrorVerbose(`(group_${closedCount}) Caught error while searching for close action, window is probably closed: ${err}`);
+      logErrorVerbose(err);
+      return null;
+    }
+    log("No close action found for notification");
+    return null;
+  };
+
+  const closeNextGroup = (groups, closedCount) =&gt; {
+    try {
+      for (let group of groups) {
+        if (notificationGroupMatches(group)) {
+          let closeAction = findCloseAction(group, closedCount);
+
+          if (notNull(closeAction)) {
+            try {
+              closeAction.perform();
+              return [true, 1];
+            } catch (err) {
+              logErrorVerbose(`(group_${closedCount}) Caught error while performing close action, window is probably closed: ${err}`);
+              logErrorVerbose(err);
+            }
+          }
+          return [true, 0];
+        }
+      }
+      return false;
+    } catch (err) {
+      logError("Could not run closeNextGroup");
+      throw err;
+    }
+  };
+
+  try {
+    let groupsCount = getNotificationCenterGroups(true).filter(group =&gt; notificationGroupMatches(group)).length;
+
+    if (groupsCount &gt; 0) {
+      logVerbose(`Closing ${groupsCount}${appNameForLog} notification group${(groupsCount &gt; 1 ? "s" : "")}`);
+
+      let startTime = new Date().getTime();
+      let closedCount = 0;
+      let maybeMore = true;
+      let maxAttempts = 2;
+      let attempts = 1;
+      while (maybeMore &amp;&amp; ((new Date().getTime() - startTime) &lt;= (1000 * 30))) {
+        try {
+          let closeResult = closeNextGroup(getNotificationCenterGroups(), closedCount);
+          maybeMore = closeResult[0];
+          if (maybeMore) {
+            closedCount = closedCount + closeResult[1];
+          }
+        } catch (innerErr) {
+          if (maybeMore &amp;&amp; closedCount === 0 &amp;&amp; attempts &lt; maxAttempts) {
+            log(`Caught an error before anything closed, trying ${maxAttempts - attempts} more time(s).`)
+            attempts++;
+          } else {
+            throw innerErr;
+          }
+        }
+      }
+    } else {
+      throw Error(`No${appNameForLog} notifications found...`);
+    }
+  } catch (err) {
+    logError(err);
+    logError(err.message);
+    getLogLines();
+    throw err;
+  }
+
+  return getLogLines();
+}</string>
+				</dict>
+				<key>BundleIdentifier</key>
+				<string>com.apple.Automator.RunJavaScript</string>
+				<key>CFBundleVersion</key>
+				<string>1.0</string>
+				<key>CanShowSelectedItemsWhenRun</key>
+				<false/>
+				<key>CanShowWhenRun</key>
+				<true/>
+				<key>Category</key>
+				<array>
+					<string>AMCategoryUtilities</string>
+				</array>
+				<key>Class Name</key>
+				<string>RunJavaScriptAction</string>
+				<key>InputUUID</key>
+				<string>CE91D683-D5B5-41BA-9064-B74F497F1372</string>
+				<key>Keywords</key>
+				<array>
+					<string>Run</string>
+					<string>JavaScript</string>
+				</array>
+				<key>OutputUUID</key>
+				<string>0CD8EEA4-3229-4D30-B49A-35B3895BE9DE</string>
+				<key>UUID</key>
+				<string>4899D285-3B29-4D7A-8D73-5D376ED33053</string>
+				<key>UnlocalizedApplications</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>arguments</key>
+				<dict>
+					<key>0</key>
+					<dict>
+						<key>default value</key>
+						<string>function run(input, parameters) {
+	
+	// Your script goes here
+
+	return input;
+}</string>
+						<key>name</key>
+						<string>source</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>0</string>
+					</dict>
+				</dict>
+				<key>conversionLabel</key>
+				<integer>0</integer>
+				<key>isViewVisible</key>
+				<integer>1</integer>
+				<key>location</key>
+				<string>309.000000:368.000000</string>
+				<key>nibPath</key>
+				<string>/System/Library/Automator/Run JavaScript.action/Contents/Resources/Base.lproj/main.nib</string>
+			</dict>
+			<key>isViewVisible</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>connectors</key>
+	<dict/>
+	<key>workflowMetaData</key>
+	<dict>
+		<key>applicationBundleIDsByPath</key>
+		<dict/>
+		<key>applicationPaths</key>
+		<array/>
+		<key>inputTypeIdentifier</key>
+		<string>com.apple.Automator.nothing</string>
+		<key>outputTypeIdentifier</key>
+		<string>com.apple.Automator.nothing</string>
+		<key>presentationMode</key>
+		<integer>11</integer>
+		<key>processesInput</key>
+		<false/>
+		<key>serviceInputTypeIdentifier</key>
+		<string>com.apple.Automator.nothing</string>
+		<key>serviceOutputTypeIdentifier</key>
+		<string>com.apple.Automator.nothing</string>
+		<key>serviceProcessesInput</key>
+		<false/>
+		<key>systemImageName</key>
+		<string>NSActionTemplate</string>
+		<key>useAutomaticInputType</key>
+		<false/>
+		<key>workflowTypeIdentifier</key>
+		<string>com.apple.Automator.servicesMenu</string>
+	</dict>
+</dict>
+</plist>
