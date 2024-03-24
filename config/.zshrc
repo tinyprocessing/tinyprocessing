@@ -30,9 +30,11 @@ source ~/powerlevel10k/powerlevel10k.zsh-theme
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-alias today="icalBuddy -f eventsToday"
-alias tomorrow="icalBuddy eventsFrom:tomorrow to:tomorrow"
+alias today="icalBuddy -f -eep "notes" eventsToday"
+alias tomorrow="icalBuddy -f -eep "notes" eventsFrom:tomorrow to:tomorrow"
 alias wifi="${HOME}/wifi.sh ${@}"
+alias glassformat="glass format path Plugins/AROptical"
+alias glassxcode="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
@@ -82,3 +84,8 @@ alias gd="git diff"
 alias gf="git fetch"
 alias l="ls -la"
 alias lg="ls -la | grep"
+alias glassformat="glass format path Plugins/AROptical"
+alias gfl="git fetch && git pull"
+alias dmformat="swiftformat VisionSandbox/DigitalMeasurement/Sources  --config swiftformat"
+alias visionformat="swiftformat VisionCenter/VisionCenter/Sources  --config swiftformat"
+alias notifications="automator ~/notifications.workflow"
