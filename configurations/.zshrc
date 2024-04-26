@@ -13,6 +13,8 @@ if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init -)"
 fi
 
+source ~/myvenv/bin/activate
+
 # pnpm
 export PNPM_HOME="/Users/vn55z6z/Library/pnpm"
 case ":$PATH:" in
@@ -85,7 +87,35 @@ alias gf="git fetch"
 alias l="ls -la"
 alias lg="ls -la | grep"
 alias glassformat="glass format path Plugins/AROptical"
+alias glasspb="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
 alias gfl="git fetch && git pull"
 alias dmformat="swiftformat VisionSandbox/DigitalMeasurement/Sources  --config swiftformat"
 alias visionformat="swiftformat VisionCenter/VisionCenter/Sources  --config swiftformat"
 alias notifications="automator ~/notifications.workflow"
+alias vpnup="${HOME}/vip.sh"
+alias vpndown="/opt/cisco/secureclient/bin/vpn -s disconnect"
+alias glassmergedevelopment="git merge --no-ff --no-commit development"
+alias vim="mvim -v"
+alias screenoff='osascript -e "tell application \"Finder\" to sleep"'
+
+
+
+source ~/tiny/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+
+fkill() {
+    lsof -t -i tcp:$1 | xargs kill -9
+}
+
+fsearch() {
+    find . -type f -iname "*$1*"
+}
+
+fgrep() {
+    find . -type f -exec grep -i --color=auto -Hn "$1" {} +
+}
+
+
+
+
+
+
