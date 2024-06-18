@@ -1,0 +1,43 @@
+[user]
+	name = Mikhail Safir
+	email = safir@thenoco.co
+[http]
+	postBuffer = 157286400
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[credential]
+	helper = osxkeychain
+[alias]
+    # one-line log
+    l = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
+
+    a = add
+    ap = add -p
+    c = commit --verbose
+    ca = commit -a --verbose
+    cm = commit -m
+    cam = commit -a -m
+    m = commit --amend --verbose
+    
+    d = diff
+    ds = diff --stat
+    dc = diff --cached
+
+    logcurrent = "!f() { git log $(git merge-base $(git symbolic-ref --short HEAD) development)..$(git symbolic-ref --short HEAD); }; f"
+    s = status -s
+    co = checkout
+    cob = checkout -b
+    # list branches sorted by last modified
+    b = branch
+    ba = "!git for-each-ref --sort='-authordate' --format='%(authordate)%09%(objectname:short)%09%(refname)' refs/heads | sed -e 's-refs/heads/--'"
+
+    # list aliases
+    la = "!git config -l | grep alias | cut -c 7-"
+[init]
+	defaultBranch = development
+[maintenance]
+	repo = /Users/vn55z6z/glass-app
+
