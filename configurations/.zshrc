@@ -13,7 +13,7 @@ if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init -)"
 fi
 
-source ~/myvenv/bin/activate
+source $HOME/.venv/bin/activate
 
 # pnpm
 export PNPM_HOME="/Users/vn55z6z/Library/pnpm"
@@ -23,6 +23,7 @@ case ":$PATH:" in
 esac
 # pnpm end
 export PATH="/opt/homebrew/opt/node@16/bin:$PATH"
+export termzsh="$HOME/.zshrc"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -35,6 +36,7 @@ source ~/powerlevel10k/powerlevel10k.zsh-theme
 alias today="icalBuddy -f -eep "notes" eventsToday"
 alias tomorrow="icalBuddy -f -eep "notes" eventsFrom:tomorrow to:tomorrow"
 alias wifi="${HOME}/wifi.sh ${@}"
+alias paymo="${HOME}/paymo.swift add 25548372 today 32400 'tinyprocessing'"
 alias glassformat="glass format path Plugins/AROptical"
 alias glassxcode="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
 
@@ -95,8 +97,8 @@ alias notifications="automator ~/notifications.workflow"
 alias vpnup="${HOME}/vip.sh"
 alias vpndown="/opt/cisco/secureclient/bin/vpn -s disconnect"
 alias glassmergedevelopment="git merge --no-ff --no-commit development"
-alias vim="mvim -v"
 alias screenoff='osascript -e "tell application \"Finder\" to sleep"'
+alias glassprs='gh pr list --search "is:open is:pr author:vn55z6z archived:false "'
 
 
 
@@ -114,8 +116,56 @@ fgrep() {
     find . -type f -exec grep -i --color=auto -Hn "$1" {} +
 }
 
+export EDITOR=vim
+export JIRA_URL=https://jira.walmart.com
 
+alias jiralist="swifty-jira issue list"
+alias jiralistdone="swifty-jira issue list --filter done"
+alias jiralistall="swifty-jira issue list --filter all"
+alias jirauser="swifty-jira user info"
+alias jiraclean="swifty-jira clean"
 
+jiradone()  {
+    swifty-jira issue transition --key $1 --status done --resolution done
+}
 
+jirabacklog()  {
+    swifty-jira issue transition --key $1 --status backlog
+}
 
+jiraworkinprogress() {
+    swifty-jira issue transition --status "In Progress Dev" --resolution "In Progress Dev" --key $1
+}
+
+jirawork()  {
+    swifty-jira issue transition --key $1 --status "Work in Progress"
+}
+
+jiraview()  {
+    swifty-jira issue view --key $1 
+}
+
+jiracreateecom() {
+    swifty-jira issue create --parent $1 --project MEMW --assignee vn55z6z --summary $2
+}
+
+jiracreatemem() {
+    swifty-jira issue create --parent $1 --project MEM --assignee vn55z6z --summary $2
+}
+
+glassstartwork() {
+    git switch development
+    grhh
+    gfl
+    jirawork $1
+    gb aroptical/vn55z6z/feature/$1
+    git switch aroptical/vn55z6z/feature/$1
+    git push -u origin aroptical/vn55z6z/feature/$1
+}
+
+alias gittree="git log --oneline --graph --decorate --branches"
+alias tree="git log --graph --oneline --all"
+alias vim="nvim"
+alias news="hn top"
+alias pkillxcode="pkill -9 XCBBuildService"
 
