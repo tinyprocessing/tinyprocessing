@@ -1,0 +1,6 @@
+signer/Payload/*
+signer/AR*
+.DS_Store
+*.ipa
+network_info.json
+*ipa.zip
