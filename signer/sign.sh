@@ -38,5 +38,7 @@ zip -r ../$SIGNED_IPA *
 echo "Re-signed IPA created: $SIGNED_IPA"
 
 rm ../profile.plist ../entitlements.plist
+rm -rf Payload/
+rm AROpticalDemoApp.ipa
 
 
