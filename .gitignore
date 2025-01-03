@@ -4,3 +4,5 @@ signer/AR*
 *.ipa
 network_info.json
 *ipa.zip
+*.ipa
+*.zip
