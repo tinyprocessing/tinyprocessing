@@ -1,3 +1,5 @@
+# Update for usage of new configuration of nvim: copy this configuration to ~/.config/nvim and run in vim PackageSync 
+
 # LLDB
 
 [![img](Media/dbgbook.png)](https://store.raywenderlich.com/products/advanced-apple-debugging-and-reverse-engineering)
