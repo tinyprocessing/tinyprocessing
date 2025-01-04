@@ -7,13 +7,25 @@ vim.o.listchars = "tab:>-,trail:~,extends:>,precedes:<,nbsp:+"
 -- Initialize Packer
 require('packer').startup(function(use)
     use 'wbthomason/packer.nvim'  -- Packer manages itself
-
+    -- Telescope: Fuzzy Finder
     -- Telescope: Fuzzy Finder
     use {
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} },
         config = function()
-            require('telescope').setup{}
+            require('telescope').setup{
+                defaults = {
+                    file_ignore_patterns = {"node_modules", ".git", ".pbxproj", ".xcodeproj"},
+                },
+                pickers = {
+                    find_files = {
+                        theme = "dropdown",
+                    },
+                    live_grep = {
+                        theme = "dropdown",
+                    },
+                },
+            }
         end
     }
 
@@ -34,7 +46,7 @@ require('packer').startup(function(use)
         config = function()
             require('nvim-tree').setup {
                 view = {
-                    width = 30,          -- Width of the tree
+                    width = 40,          -- Width of the tree
                     side = 'left',       -- Tree on the left side
                 },
                 renderer = {
@@ -57,7 +69,7 @@ require('packer').startup(function(use)
             require('toggleterm').setup {
                 direction = 'horizontal',
                 size = 15,
-                open_mapping = [[<C-c>]],  -- Open/close terminal with Ctrl-C
+                open_mapping = '<leader>t',
             }
         end
     }
@@ -117,6 +129,12 @@ end)
 -- Keybindings
 vim.api.nvim_set_keymap('n', '<C-n>', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>ff', '<cmd>Telescope find_files<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>fr', ':NvimTreeFindFile<CR>', { noremap = true, silent = true })
+
+-- Keybindings for Telescope
+vim.api.nvim_set_keymap('n', '<leader>fg', '<cmd>Telescope live_grep<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>fd', '<cmd>Telescope lsp_definitions<CR>', { noremap = true, silent = true })
+
 
 -- Remap delete commands to avoid affecting the system clipboard
 vim.api.nvim_set_keymap('n', 'd', '"_d', { noremap = true, silent = true })
@@ -124,4 +142,21 @@ vim.api.nvim_set_keymap('n', 'dd', '"_dd', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', 's', '"_s', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('x', 'd', '"_d', { noremap = true, silent = true }) -- Visual mode
 vim.api.nvim_set_keymap('n', 'D', '"_D', { noremap = true, silent = true }) -- Capital D
+
+-- Quick toggle between terminal and editor
+vim.api.nvim_set_keymap('n', '<C-q>', '<C-w>j<CR>:startinsert<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('t', '<C-q>', [[<C-\><C-N><C-w>k]], { noremap = true, silent = true })
+vim.cmd([[autocmd TermEnter * startinsert]])
+
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+    command = "checktime",
+})
+
+-- Enable line numbers
+vim.o.number = true
+vim.o.relativenumber = true
+
+-- Enable case-insensitive search
+vim.o.ignorecase = true
+vim.o.smartcase = true
 
