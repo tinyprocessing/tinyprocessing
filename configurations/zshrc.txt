@@ -1,152 +1,172 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
+# ===========================
+# POWERLEVEL10K INSTANT PROMPT
+# ===========================
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# setup pyenv
-if command -v pyenv 1>/dev/null 2>&1; then
+POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+source ~/powerlevel10k/powerlevel10k.zsh-theme
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ===========================
+# COMPLETION CACHING
+# ===========================
+autoload -U compinit
+if [[ -f ~/.zcompdump ]]; then
+  zcompdump="$HOME/.zcompdump"
+  zcompdump_cached="$HOME/.zcompdump.zwc"
+  if [[ ! -f "$zcompdump_cached" || "$zcompdump" -nt "$zcompdump_cached" ]]; then
+    compinit -i -C
+    zcompile "$zcompdump"
+  else
+    compinit -C
+  fi
+else
+  compinit -i
+fi
+
+# ===========================
+# PATH SETUP (CLEANED UP)
+# ===========================
+export PATH="$HOME/.mint/bin:$HOME/.pyenv/bin:/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/opt/llvm/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:$PATH"
+
+# ===========================
+# PLUGINS LOADING (FIXED ORDER)
+# ===========================
+
+# Load autocomplete directly
+if [[ -f $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]]; then
+  source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+fi
+
+# Load autosuggestions (first)
+if [[ -f $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# Load syntax highlighting (last)
+if [[ -f $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# nvm (lazy-load)
+load_nvm() {
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+alias nvm="load_nvm; nvm"
+
+# pyenv (lazy-load)
+load_pyenv() {
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
   eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
-fi
+}
+alias pyenv="load_pyenv; pyenv"
 
-source $HOME/.venv/bin/activate
-
-# pnpm
-export PNPM_HOME="/Users/vn55z6z/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-export PATH="/opt/homebrew/opt/node@16/bin:$PATH"
-export termzsh="$HOME/.zshrc"
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-alias today="icalBuddy -f -eep "notes" eventsToday"
-alias tomorrow="icalBuddy -f -eep "notes" eventsFrom:tomorrow to:tomorrow"
-alias wifi="${HOME}/wifi.sh ${@}"
-alias paymo="${HOME}/paymo.swift add 25548372 today 32400 'tinyprocessing'"
-alias glassformat="glass format path Plugins/AROptical"
-alias glassxcode="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-# Aliases
+# ===========================
+# GIT ALIASES (MINIMAL SET)
+# ===========================
 alias g='git'
-compdef g=git
 alias gs='git status'
-compdef _git gs=git-status
 alias gl='git pull'
-compdef _git gl=git-pull
 alias gup='git fetch && git rebase'
-compdef _git gup=git-fetch
 alias gp='git push'
-compdef _git gp=git-push
-gdv() { git diff -w "$@" | view - }
-compdef _git gdv=git-diff
-alias gc='git commit -v'
-compdef _git gc=git-commit
-alias gca='git commit -v -a'
-compdef _git gca=git-commit
 alias gco='git checkout'
-compdef _git gco=git-checkout
-alias gcm='git checkout master'
+alias gcm='git checkout main'
 alias gb='git branch'
-compdef _git gb=git-branch
-alias gba='git branch -a'
-compdef _git gba=git-branch
-alias gcount='git shortlog -sn'
-compdef gcount=git
-alias gcp='git cherry-pick'
-compdef _git gcp=git-cherry-pick
-alias glg='git log --stat --max-count=5'
-compdef _git glg=git-log
-alias glgg='git log --graph --max-count=5'
-compdef _git glgg=git-log
-alias gss='git status -s'
-compdef _git gss=git-status
+alias gc='git commit -v'
 alias ga='git add'
-compdef _git ga=git-add
 alias gm='git merge'
-compdef _git gm=git-merge
 alias grh='git reset HEAD'
 alias grhh='git reset HEAD --hard'
+alias gd='git diff'
+alias gss='git status -s'
+alias gfl='git fetch && git pull'
+
+# ===========================
+# GENERAL ALIASES
+# ===========================
 alias c="clear"
 alias x="exit"
-alias gd="git diff"
-alias gf="git fetch"
 alias l="ls -la"
 alias lg="ls -la | grep"
-alias glassformat="glass format path Plugins/AROptical"
-alias glasspb="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
-alias gfl="git fetch && git pull"
-alias dmformat="swiftformat VisionSandbox/DigitalMeasurement/Sources  --config swiftformat"
-alias visionformat="swiftformat VisionCenter/VisionCenter/Sources  --config swiftformat"
-alias notifications="automator ~/notifications.workflow"
-alias vpnup="${HOME}/vip.sh"
-alias vpndown="/opt/cisco/secureclient/bin/vpn -s disconnect"
-alias glassmergedevelopment="git merge --no-ff --no-commit development"
-alias screenoff='osascript -e "tell application \"Finder\" to sleep"'
-alias glassprs='gh pr list --search "is:open is:pr author:vn55z6z archived:false "'
+alias vim="nvim"
+alias pkillxcode="pkill -9 XCBBuildService"
 
-
-
-source ~/tiny/zsh-autocomplete/zsh-autocomplete.plugin.zsh
-
+# ===========================
+# FUNCTIONS (MINIMIZED)
+# ===========================
 fkill() {
-    lsof -t -i tcp:$1 | xargs kill -9
+  lsof -t -i tcp:$1 | xargs kill -9
 }
 
 fsearch() {
-    find . -type f -iname "*$1*"
+  rg --files 2>/dev/null | grep --color=always -i "$1"
 }
 
 fgrep() {
-    find . -type f -exec grep -i --color=auto -Hn "$1" {} +
+  rg --color=always --line-number --smart-case --fixed-strings "$1"
 }
 
-export EDITOR=vim
+# ===========================
+# JIRA COMMANDS (ONLY CORE)
+# ===========================
 export JIRA_URL=https://jira.walmart.com
-
+alias jiralistsprint="swifty-jira issue list --filter openSprints"
 alias jiralist="swifty-jira issue list"
+alias jiralistbacklog="swifty-jira issue list --filter backlog"
 alias jiralistdone="swifty-jira issue list --filter done"
 alias jiralistall="swifty-jira issue list --filter all"
 alias jirauser="swifty-jira user info"
 alias jiraclean="swifty-jira clean"
 
+jirastatuses() { 
+    swifty-jira issue view --key $1 --enable-list-statuses
+}
+
+jiraassignee() { 
+    swifty-jira issue assignee --key $1 --account-id vn55z6z
+}
+
 jiradone()  {
     swifty-jira issue transition --key $1 --status done --resolution done
 }
 
-jirabacklog()  {
+jira_inBacklog()  {
     swifty-jira issue transition --key $1 --status backlog
 }
 
-jiraworkinprogress() {
+jira_inBlock() { 
+    swifty-jira issue transition --status "Blocked" --key $1
+}
+
+jira_inProgressQA() { 
+    swifty-jira issue transition --status "In Progress QA" --key $1
+}
+
+jira_inProgressDev() {
     swifty-jira issue transition --status "In Progress Dev" --resolution "In Progress Dev" --key $1
 }
 
-jirawork()  {
+jira_InWork()  {
     swifty-jira issue transition --key $1 --status "Work in Progress"
+}
+
+jira_DevComplete()  {
+    swifty-jira issue transition --key $1 --status "Dev Complete"
 }
 
 jiraview()  {
     swifty-jira issue view --key $1 
 }
 
-jiracreateecom() {
-    swifty-jira issue create --parent $1 --project MEMW --assignee vn55z6z --summary $2
+jiraviewweb() { 
+    swifty-jira issue view --key $1 --view-in-web true
 }
 
 jiracreatemem() {
@@ -163,13 +183,38 @@ glassstartwork() {
     git push -u origin aroptical/vn55z6z/feature/$1
 }
 
-alias gittree="git log --oneline --graph --decorate --branches"
-alias tree="git log --graph --oneline --all"
-alias vim="nvim"
-alias news="hn top"
-alias pkillxcode="pkill -9 XCBBuildService"
+# ===========================
+# SWIFT FORMAT HELPERS
+# ===========================
+alias dmformat="swiftformat VisionSandbox/DigitalMeasurement/Sources --config swiftformat"
+alias visionformat="swiftformat VisionCenter/VisionCenter/Sources --config swiftformat"
+alias glasspb="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
+alias notifications="automator ~/notifications.workflow"
+alias vpnup="${HOME}/vip.sh"
+alias cavpnup="${HOME}/cavip.sh"
+alias vpndown="/opt/cisco/secureclient/bin/vpn -s disconnect"
+alias glassmergedevelopment="git merge --no-ff --no-commit development"
+alias screenoff='osascript -e "tell application \"Finder\" to sleep"'
+alias glassprs='gh pr list --search "is:open is:pr author:vn55z6z archived:false "'
+alias glassadd="git add Plugins/AROptical/AROptical/Sources/"
+alias glasscheck="glass tech-debt evaluate --mode warningsAndViolations -o glass-aroptical-ios"
+alias glasscheckviolations="glass tech-debt evaluate --mode violationsOnly -o glass-aroptical-ios"
+alias today="icalBuddy -f -eep "notes" eventsToday"
+alias tomorrow="icalBuddy -f -eep "notes" eventsFrom:tomorrow to:tomorrow"
+alias wifi="${HOME}/wifi.sh ${@}"
+alias paymo="${HOME}/paymo.swift add 25548372 today 32400 'tinyprocessing'"
+alias glassformat="glass format path Plugins/AROptical"
+alias glassxcode="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
 
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
-source /Users/vn55z6z/.rvm/scripts/rvm
-source /Users/vn55z6z/.rvm/scripts/rvm
+# ===========================
+# OPTIONAL: ADDITIONAL CONFIG
+# ===========================
+# Load custom functions if present
+[ -f ~/.zsh_functions ] && source ~/.zsh_functions
+
+# ===========================
+# FINAL CLEANUP
+# ===========================
+unset zcompdump zcompdump_cached
+export GLASSCLI_XCODE_DEV_VERSION_ENABLED="1"
+
