@@ -1,44 +1,57 @@
 #!/bin/bash
 
-# Variables
-IPA="AROpticalDemoApp.ipa"
+IPA="Walmart.ipa"
 NEW_PROVISIONING_PROFILE="AROptical_Provisioning.mobileprovision"
-SIGNED_IPA="SignedAROpticalDemoApp.ipa"
+SIGNED_IPA="SignedWalmart.ipa"
 CERTIFICATE="Apple Distribution: Mikhail Safir (GAH72SPMY9)"
 
 # Unzip IPA
 unzip $IPA -d Payload
 
-# Replace Provisioning Profile
-cp $NEW_PROVISIONING_PROFILE Payload/Payload/AROpticalDemoApp.app/embedded.mobileprovision
+# Paths
+APP_PATH="Payload/Payload/Walmart.app"
+FRAMEWORKS_PATH="$APP_PATH/Frameworks"
+PLUGINS_PATH="$APP_PATH/PlugIns"
 
-# Extract entitlements
+# Replace provisioning profile in main app
+cp $NEW_PROVISIONING_PROFILE "$APP_PATH/embedded.mobileprovision"
+
+# Extract entitlements for main app
 security cms -D -i $NEW_PROVISIONING_PROFILE > profile.plist
-/usr/libexec/PlistBuddy -x -c 'Print :Entitlements' profile.plist > entitlements.plist
+/usr/libexec/PlistBuddy -x -c 'Print :Entitlements' profile.plist > app_entitlements.plist
 
-cp entitlements.plist Payload/Payload/AROpticalDemoApp.app/entitlements.plist
-PATH_ENTITLEMENTS="Payload/Payload/AROpticalDemoApp.app/entitlements.plist"
-
-# Remove existing code signature
-rm -rf Payload/Payload/AROpticalDemoApp.app/_CodeSignature
+# Remove old code signatures
+rm -rf "$APP_PATH/_CodeSignature"
 
 # Sign each framework
-FRAMEWORKS_PATH="Payload/Payload/AROpticalDemoApp.app/Frameworks"
-for FRAMEWORK in "$FRAMEWORKS_PATH"/*; do
-  codesign -f -s "$CERTIFICATE" --entitlements $PATH_ENTITLEMENTS "$FRAMEWORK"
-done
+if [ -d "$FRAMEWORKS_PATH" ]; then
+  for FRAMEWORK in "$FRAMEWORKS_PATH"/*; do
+    codesign -f -s "$CERTIFICATE" --entitlements app_entitlements.plist "$FRAMEWORK"
+  done
+fi
 
-# Re-sign the App
-codesign -f -s "$CERTIFICATE" --entitlements $PATH_ENTITLEMENTS Payload/Payload/AROpticalDemoApp.app
+# Sign app extensions
+if [ -d "$PLUGINS_PATH" ]; then
+  for PLUGIN in "$PLUGINS_PATH"/*.appex; do
+    cp $NEW_PROVISIONING_PROFILE "$PLUGIN/embedded.mobileprovision"
+    
+    # Extract extension entitlements (Optional: if another profile used)
+    /usr/libexec/PlistBuddy -x -c 'Print :Entitlements' profile.plist > extension_entitlements.plist
 
-# Repackage IPA
+    rm -rf "$PLUGIN/_CodeSignature"
+    codesign -f -s "$CERTIFICATE" --entitlements extension_entitlements.plist "$PLUGIN"
+  done
+fi
+
+# Sign the app
+codesign -f -s "$CERTIFICATE" --entitlements app_entitlements.plist "$APP_PATH"
+
+# Repack IPA
 cd Payload
-zip -r ../$SIGNED_IPA *
+zip -r "../$SIGNED_IPA" *
+cd ..
 
-echo "Re-signed IPA created: $SIGNED_IPA"
-
-rm ../profile.plist ../entitlements.plist
-rm -rf Payload/
-rm AROpticalDemoApp.ipa
-
+# Clean up
+rm profile.plist app_entitlements.plist extension_entitlements.plist
+rm -rf Payload
 
