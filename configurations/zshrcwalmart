@@ -1,0 +1,309 @@
+# ===========================
+# POWERLEVEL10K INSTANT PROMPT
+# ===========================
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+source ~/powerlevel10k/powerlevel10k.zsh-theme
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ===========================
+# COMPLETION CACHING
+# ===========================
+autoload -U compinit
+if [[ -f ~/.zcompdump ]]; then
+  zcompdump="$HOME/.zcompdump"
+  zcompdump_cached="$HOME/.zcompdump.zwc"
+  if [[ ! -f "$zcompdump_cached" || "$zcompdump" -nt "$zcompdump_cached" ]]; then
+    compinit -i -C
+    zcompile "$zcompdump"
+  else
+    compinit -C
+  fi
+else
+  compinit -i
+fi
+
+# ===========================
+# PATH SETUP (CLEANED UP)
+# ===========================
+export PATH="$HOME/.mint/bin:$HOME/.pyenv/bin:/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/openjdk/bin:/usr/local/opt/llvm/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:$PATH"
+
+# ===========================
+# PLUGINS LOADING (FIXED ORDER)
+# ===========================
+
+# Load autocomplete directly
+if [[ -f $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh ]]; then
+  source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+fi
+
+# Load autosuggestions (first)
+if [[ -f $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+  source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# Load syntax highlighting (last)
+if [[ -f $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+  source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# nvm (lazy-load)
+load_nvm() {
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+alias nvm="load_nvm; nvm"
+
+# pyenv (lazy-load)
+load_pyenv() {
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init --path)"
+  eval "$(pyenv init -)"
+}
+alias pyenv="load_pyenv; pyenv"
+
+# ===========================
+# GIT ALIASES (MINIMAL SET)
+# ===========================
+alias g='git'
+alias gs='git status'
+alias gl='git pull'
+alias gup='git fetch && git rebase'
+alias gp='git push'
+alias gco='git checkout'
+alias gcm='git checkout main'
+alias gb='git branch'
+alias gc='git commit -v'
+alias ga='git add'
+alias gm='git merge'
+alias grh='git reset HEAD'
+alias grhh='git reset HEAD --hard'
+alias gd='git diff'
+alias gss='git status -s'
+alias gfl='git fetch && git pull'
+
+# ===========================
+# GENERAL ALIASES
+# ===========================
+alias c="clear"
+alias x="exit"
+alias l="ls -la"
+alias lg="ls -la | grep"
+alias vim="nvim"
+alias pkillxcode="pkill -9 XCBBuildService"
+
+# ===========================
+# FUNCTIONS (MINIMIZED)
+# ===========================
+fkill() {
+  lsof -t -i tcp:$1 | xargs kill -9
+}
+
+fsearch() {
+  rg --files 2>/dev/null | grep --color=always -i "$1"
+}
+
+fgrep() {
+  rg --color=always --line-number --smart-case --fixed-strings "$1"
+}
+
+# ===========================
+# JIRA COMMANDS (ONLY CORE)
+# ===========================
+export JIRA_URL=https://jira.walmart.com
+alias jiralistsprint="swifty-jira issue list --filter openSprints"
+alias jiralist="swifty-jira issue list"
+alias jiralistbacklog="swifty-jira issue list --filter backlog"
+alias jiralistdone="swifty-jira issue list --filter done"
+alias jiralistall="swifty-jira issue list --filter all"
+alias jirauser="swifty-jira user info"
+alias jiraclean="swifty-jira clean"
+
+jirastatuses() { 
+    swifty-jira issue view --key $1 --enable-list-statuses
+}
+
+jiraassignee() { 
+    swifty-jira issue assignee --key $1 --account-id vn55z6z
+}
+
+jiradone()  {
+    swifty-jira issue transition --key $1 --status done --resolution done
+}
+
+jira_inBacklog()  {
+    swifty-jira issue transition --key $1 --status backlog
+}
+
+jira_inBlock() { 
+    swifty-jira issue transition --status "Blocked" --key $1
+}
+
+jira_inProgressQA() { 
+    swifty-jira issue transition --status "In Progress QA" --key $1
+}
+
+jira_inProgressDev() {
+    swifty-jira issue transition --status "In Progress Dev" --resolution "In Progress Dev" --key $1
+}
+
+jira_InWork()  {
+    swifty-jira issue transition --key $1 --status "Work in Progress"
+}
+
+jira_DevComplete()  {
+    swifty-jira issue transition --key $1 --status "Dev Complete"
+}
+
+jiraview()  {
+    swifty-jira issue view --key $1 
+}
+
+jiraviewweb() { 
+    swifty-jira issue view --key $1 --view-in-web true
+}
+
+jiracreatemem() {
+    swifty-jira issue create --parent $1 --project MEM --assignee vn55z6z --summary $2
+}
+
+glassstartwork() {
+    git switch development
+    grhh
+    gfl
+    jirawork $1
+    gb aroptical/vn55z6z/feature/$1
+    git switch aroptical/vn55z6z/feature/$1
+    git push -u origin aroptical/vn55z6z/feature/$1
+}
+
+# ===========================
+# SWIFT FORMAT HELPERS
+# ===========================
+alias dmformat="swiftformat VisionSandbox/DigitalMeasurement/Sources --config swiftformat"
+alias visionformat="swiftformat VisionCenter/VisionCenter/Sources --config swiftformat"
+alias glasspb="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
+alias notifications="automator ~/notifications.workflow"
+alias vpnup="${HOME}/vip.sh"
+alias cavpnup="${HOME}/cavip.sh"
+alias vpndown="/opt/cisco/secureclient/bin/vpn -s disconnect"
+alias glassmergedevelopment="git merge --no-ff --no-commit development"
+alias screenoff='osascript -e "tell application \"Finder\" to sleep"'
+alias glassprs='gh pr list --search "is:open is:pr author:vn55z6z archived:false "'
+alias glassadd="git add Plugins/AROptical/AROptical/Sources/"
+alias glasscheck="glass tech-debt evaluate --mode warningsAndViolations -o glass-aroptical-ios"
+alias glasscheckviolations="glass tech-debt evaluate --mode violationsOnly -o glass-aroptical-ios"
+alias today="icalBuddy -f -eep "notes" eventsToday"
+alias tomorrow="icalBuddy -f -eep "notes" eventsFrom:tomorrow to:tomorrow"
+alias wifi="${HOME}/wifi.sh ${@}"
+alias paymo="${HOME}/paymo.swift add 25548372 today 32400 'tinyprocessing'"
+alias glassformat="glass format path Plugins/AROptical"
+alias glassxcode="scripts/xcodeproj_verifications/_cleanup_projects.py --all --throw"
+
+# ===========================
+# OPTIONAL: ADDITIONAL CONFIG
+# ===========================
+# Load custom functions if present
+[ -f ~/.zsh_functions ] && source ~/.zsh_functions
+
+# ===========================
+# FINAL CLEANUP
+# ===========================
+unset zcompdump zcompdump_cached
+export GLASSCLI_XCODE_DEV_VERSION_ENABLED="1"
+
+function compare-missing-files() {
+  local tmp1=$(mktemp)
+  local tmp2=$(mktemp)
+
+  (cd "$1" && find . -type f | sort) > "$tmp1"
+  (cd "$2" && find . -type f | sort) > "$tmp2"
+
+  echo "Missing in $2:"
+  comm -23 "$tmp1" "$tmp2"
+
+  rm -f "$tmp1" "$tmp2"
+}
+
+merge-to-retina-engine() {
+  local SRC="${HOME}/glass-app/Plugins/AROptical/Memomi/Sources"
+  local DEST="${HOME}/memomi-retina-core/platform/ios/MemomiRetina/Sources"
+
+  if ! command -v unison >/dev/null 2>&1; then
+    printf "Error: unison is not installed.\n" >&2
+    return 1
+  fi
+
+  if [ ! -d "$SRC" ] || [ ! -d "$DEST" ]; then
+    printf "Error: Source or destination directory does not exist.\n" >&2
+    return 2
+  fi
+
+  unison "$SRC" "$DEST" -force "$SRC" -auto -batch
+}
+
+merge-to-optical-engine() {
+  local SRC="${HOME}/memomi-retina-core/platform/ios/MemomiRetina/Sources"
+  local DEST="${HOME}/glass-app/Plugins/AROptical/Memomi/Sources"
+
+  if ! command -v unison >/dev/null 2>&1; then
+    printf "Error: unison is not installed.\n" >&2
+    return 1
+  fi
+
+  if [ ! -d "$SRC" ] || [ ! -d "$DEST" ]; then
+    printf "Error: Source or destination directory does not exist.\n" >&2
+    return 2
+  fi
+
+  unison "$SRC" "$DEST" -force "$SRC" -auto -batch
+}
+
+merge-to-optical-engine-tests() {
+  local SRC="${HOME}/memomi-retina-core/platform/ios/MemomiRetina/MemomiRetinaTests"
+  local DEST="${HOME}/glass-app/Plugins/AROptical/MemomiTests"
+
+  if ! command -v unison >/dev/null 2>&1; then
+    printf "Error: unison is not installed.\n" >&2
+    return 1
+  fi
+
+  if [ ! -d "$SRC" ] || [ ! -d "$DEST" ]; then
+    printf "Error: Source or destination directory does not exist.\n" >&2
+    return 2
+  fi
+
+  unison "$SRC" "$DEST" -force "$SRC" -auto -batch
+}
+
+merge-to-retina-engine-tests() {
+  local SRC="${HOME}/glass-app/Plugins/AROptical/MemomiTests"
+  local DEST="${HOME}/memomi-retina-core/platform/ios/MemomiRetina/MemomiRetinaTests"
+
+  if ! command -v unison >/dev/null 2>&1; then
+    printf "Error: unison is not installed.\n" >&2
+    return 1
+  fi
+
+  if [ ! -d "$SRC" ] || [ ! -d "$DEST" ]; then
+    printf "Error: Source or destination directory does not exist.\n" >&2
+    return 2
+  fi
+
+  unison "$SRC" "$DEST" -force "$SRC" -auto -batch
+}
+
+
+export PATH="$HOME/.local/bin:$PATH"
+
+get-into-aroptcial() { 
+  cd ~/glass-app/Plugins/AROptical/
+}
+
+# unison Plugins/AROptical/Memomi/Sources /Users/vn55z6z/memomi-retina-core/platform/ios/MemomiRetina/Sources -force Plugins/AROptical/Memomi/Sources -auto -batch
